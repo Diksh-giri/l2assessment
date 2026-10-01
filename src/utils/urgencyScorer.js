@@ -11,12 +11,22 @@
 const CRITICAL_PHRASES = [
   'down', 'outage', 'offline', "can't access", 'cannot access',
   "can't log in", 'cannot log in', 'locked out', 'lost access',
-  'data loss', 'lost my data', 'connection lost', 'database',
+  'connection lost', 'database',
   'emergency', 'urgent', 'asap', 'immediately', 'critical',
   'production', 'crash', 'crashed', 'broken', 'security breach',
   'hacked', 'unauthorized charge', 'overcharged', 'charged twice',
   "won't load", 'not loading at all'
 ]
+
+// Data loss shows up in too many phrasings to list exhaustively
+// ("data is lost", "lost all my data", "data loss", "my files are gone") -
+// detect it as co-occurrence instead of exact phrases.
+const DATA_WORDS = ['data', 'files', 'records', 'documents']
+const LOSS_WORDS = ['lost', 'loss', 'deleted', 'gone', 'disappeared', 'wiped']
+
+function hasDataLossSignal(text) {
+  return DATA_WORDS.some(d => text.includes(d)) && LOSS_WORDS.some(l => text.includes(l))
+}
 
 const MODERATE_PHRASES = [
   'error', 'bug', 'issue', 'problem', 'not working', 'slow',
@@ -36,7 +46,7 @@ function countMatches(text, phrases) {
 export function calculateUrgency(message) {
   const text = message.toLowerCase()
 
-  const criticalHits = countMatches(text, CRITICAL_PHRASES)
+  const criticalHits = countMatches(text, CRITICAL_PHRASES) + (hasDataLossSignal(text) ? 1 : 0)
   const moderateHits = countMatches(text, MODERATE_PHRASES)
   const nonUrgentHits = countMatches(text, NON_URGENT_PHRASES)
 
